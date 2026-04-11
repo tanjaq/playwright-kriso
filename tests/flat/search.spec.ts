@@ -48,14 +48,22 @@ test.describe('Search for Books by Keywords', () => {
     await page.locator('#top-search-btn-wrap').click();
 
     //TODO check results contain keyword
-  });
+    const results = page.getByRole('link');
+    await expect(results.first()).toBeVisible();
+
+    const count = await results.count();
+    expect(count).toBeGreaterThan(1);
+
+    await expect(page.getByText(/tolkien/i).first()).toBeVisible();
+    });
 
     test('Test search by ISBN', async () => {
-    await page.locator('#top-search-text').click();
-    await page.locator('#top-search-text').fill('9780307588371');
-    await page.locator('#top-search-btn-wrap').click();
+      await page.locator('#top-search-text').click();
+      await page.locator('#top-search-text').fill('9780307588371');
+      await page.locator('#top-search-btn-wrap').click();
 
-    //TODO check correct book is shown
-  });
+      //TODO check correct book is shown
+      await expect(page.getByRole('heading', { name: /Gone Girl/i })).toBeVisible();
+    });
 
 });
