@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "moduleResolution": "Node16",
     "strict": true,
     "esModuleInterop": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "types": ["node", "@playwright/test"]
   },
-  "include": ["tests/**/*.ts", "pages/**/*.ts"]
+  "include": ["**/*.ts"]
 }

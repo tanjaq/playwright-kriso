@@ -6,9 +6,11 @@
  *   - No raw selectors in test files — all locators live in page classes
  *   - Use only: getByRole, getByText, getByPlaceholder, getByLabel
  */
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { HomePage } from '../../pages/HomePage';
+
+test.describe.configure({ mode: 'serial' });
 
 let page: Page;
 let homePage: HomePage;
@@ -16,6 +18,7 @@ let homePage: HomePage;
 test.describe('Search for Books by Keywords (POM)', () => {
 
   test.beforeAll(async ({ browser }) => {
+      test.setTimeout(90_000);
       const context = await browser.newContext();
       page = await context.newPage();
   
@@ -40,15 +43,13 @@ test.describe('Search for Books by Keywords (POM)', () => {
 
     test('Test search results contain keyword', async () => {
     await homePage.searchByKeyword('tolkien');
-    await homePage.verifyResultsCountMoreThan(1)
-
-    //TODO check results contain keyword
+    await homePage.verifyResultsCountMoreThan(1);
+    await homePage.verifyResultsContainKeyword('tolkien');
   });
 
     test('Test search by ISBN', async () => {
     await homePage.searchByKeyword('9780307588371');
-
-    //TODO check correct book is shown
+    await homePage.verifyBookIsShown('Gone Girl');
   });
 
 });

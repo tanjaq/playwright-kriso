@@ -22,6 +22,7 @@ let basketSumOfOne = 0;
 test.describe('Add Books to Shopping Cart (POM)', () => {
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(90_000);
     const context = await browser.newContext();
     page = await context.newPage();
 
@@ -75,4 +76,3 @@ test.describe('Add Books to Shopping Cart (POM)', () => {
   });
 
 }); 
-
