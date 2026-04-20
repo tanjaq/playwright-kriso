@@ -7,9 +7,10 @@ name: Playwright E2E Tests
 # See README.md Part III — Step 2 for the syntax.
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
+    branches: ['**']
+
 
 jobs:
   e2e:
