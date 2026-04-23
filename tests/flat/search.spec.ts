@@ -14,6 +14,7 @@ import type { Page } from '@playwright/test';
 test.describe.configure({ mode: 'serial' });
 
 let page: Page;
+const searchBoxName = /Pealkiri, autor, ISBN/i;
 
 test.describe('Search for Books by Keywords', () => {
 
@@ -30,32 +31,35 @@ test.describe('Search for Books by Keywords', () => {
     });
 
     test('Test logo is visible', async () => {
-      const logo = page.locator('.logo-icon');
-      await expect(logo).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Muusikaraamatud ja noodid' })).toBeVisible();
     }); 
 
   test('Test no products found', async () => {
-    await page.locator('#top-search-text').click();
-    await page.locator('#top-search-text').fill('jaslkfjalskjdkls');
-    await page.locator('#top-search-btn-wrap').click();
+    await page.getByRole('textbox', { name: searchBoxName }).click();
+    await page.getByRole('textbox', { name: searchBoxName }).fill('jaslkfjalskjdkls');
+    await page.getByRole('button', { name: 'Search' }).click();
 
-    await expect(page.locator('.msg.msg-info')).toContainText('Teie poolt sisestatud märksõnale vastavat raamatut ei leitud. Palun proovige uuesti!');
+    await expect(page.getByText('Teie poolt sisestatud märksõnale vastavat raamatut ei leitud. Palun proovige uuesti!')).toBeVisible();
   });
 
-    test('Test search results contain keyword', async () => {
-    await page.locator('#top-search-text').click();
-    await page.locator('#top-search-text').fill('tolkien');
-    await page.locator('#top-search-btn-wrap').click();
+  test('Test search results contain keyword', async () => {
+    await page.getByRole('textbox', { name: searchBoxName }).click();
+    await page.getByRole('textbox', { name: searchBoxName }).fill('tolkien');
+    await page.getByRole('button', { name: 'Search' }).click();
 
-    //TODO check results contain keyword
+    await expect(page.getByRole('heading', { name: 'Otsingu tulemused' })).toBeVisible();
+
+    const searchResults = page.getByRole('heading').filter({ hasText: 'Tolkien' });
+    await expect(searchResults.first()).toBeVisible();
+    expect(await searchResults.count()).toBeGreaterThan(1);
   });
 
-    test('Test search by ISBN', async () => {
-    await page.locator('#top-search-text').click();
-    await page.locator('#top-search-text').fill('9780307588371');
-    await page.locator('#top-search-btn-wrap').click();
+  test('Test search by ISBN', async () => {
+    await page.getByRole('textbox', { name: searchBoxName }).click();
+    await page.getByRole('textbox', { name: searchBoxName }).fill('9780307588371');
+    await page.getByRole('button', { name: 'Search' }).click();
 
-    //TODO check correct book is shown
+    await expect(page.getByRole('heading', { name: /Gone Girl/i })).toBeVisible();
   });
 
 });

@@ -9,9 +9,13 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { HomePage } from '../../pages/HomePage';
+import { ProductPage } from '../../pages/ProductPage';
+
+test.describe.configure({ mode: 'serial' });
 
 let page: Page;
 let homePage: HomePage;
+let productPage: ProductPage;
 
 test.describe('Search for Books by Keywords (POM)', () => {
 
@@ -39,16 +43,15 @@ test.describe('Search for Books by Keywords (POM)', () => {
     });
 
     test('Test search results contain keyword', async () => {
-    await homePage.searchByKeyword('tolkien');
-    await homePage.verifyResultsCountMoreThan(1)
-
-    //TODO check results contain keyword
-  });
+      await homePage.searchByKeyword('tolkien');
+      await homePage.verifyResultsCountMoreThan(1);
+      await homePage.verifySearchResultsContainKeyword();
+    });
 
     test('Test search by ISBN', async () => {
-    await homePage.searchByKeyword('9780307588371');
-
-    //TODO check correct book is shown
-  });
+      await homePage.searchByKeyword('9780307588371');
+      productPage = await homePage.openIsbnResult();
+      await productPage.verifyGoneGirlTitle();
+    });
 
 });

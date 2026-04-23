@@ -6,17 +6,20 @@ name: Playwright E2E Tests
 #   - a pull request targeting the main branch
 # See README.md Part III — Step 2 for the syntax.
 on:
-  # TODO
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   e2e:
     # TODO: Set the machine type this job runs on.
     # Hint: ubuntu-latest
-    runs-on: # TODO
+    runs-on: ubuntu-latest
 
     # TODO: Add a timeout so a stuck job doesn't run forever.
     # Hint: 15 minutes is a good default for a Playwright suite.
-    timeout-minutes: # TODO
+    timeout-minutes: 15
 
     steps:
       # Step 1 — Check out your repository code onto the runner.
@@ -28,26 +31,29 @@ jobs:
       #   - Set node-version to '20'
       #   - Enable caching for npm
       # See README.md Part III — Step 5 for the full syntax.
-      - # TODO
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
 
       # Step 3 — Install npm dependencies.
       # TODO: Add a step named "Install dependencies".
       #   - Run the npm command recommended for CI environments.
       #   - Hint: npm ci reads package-lock.json exactly; npm install does not.
       - name: Install dependencies
-        run: # TODO
+        run: npm ci
 
       # Step 4 — Install Playwright browsers.
       # TODO: Add the command that installs browsers and their system dependencies.
       #   - Install Chromium only to keep the job fast.
       #   - Hint: npx playwright install --with-deps <browser>
       - name: Install Playwright browsers
-        run: # TODO
+        run: npx playwright install --with-deps chromium
 
       # Step 5 — Run the tests.
       # TODO: Add the command that runs all Playwright tests.
       - name: Run Playwright tests
-        run: # TODO
+        run: npx playwright test --project=chromium
 
       # Step 6 — Upload the HTML report so you can download it after the run.
       # TODO: Use the actions/upload-artifact@v4 action with these settings:
@@ -57,4 +63,9 @@ jobs:
       #   - Keep the artifact for 14 days (retention-days)
       # See README.md Part III — Step 9 for the full syntax.
       - name: Upload test report
-        # TODO
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
