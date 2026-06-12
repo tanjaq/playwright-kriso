@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class CartPage extends BasePage {
@@ -6,6 +6,7 @@ export class CartPage extends BasePage {
   private readonly cartSubtotals: Locator;
   private readonly cartTotal: Locator;
   private readonly removeButton: Locator;
+  private readonly cartItemTitles: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -13,15 +14,31 @@ export class CartPage extends BasePage {
     this.cartSubtotals = this.page.locator('.tbl-row > .subtotal');
     this.cartTotal = this.page.locator('.order-total > .o-value');
     this.removeButton = this.page.locator('.icon-remove');
+    this.cartItemTitles = this.page.locator('.tbl-row .title a');
   }
 
-  async verifyCartCount(expectedCount: number) {
+  async verifyCartCount(expectedCount: number): Promise<void> {
     await expect(this.cartQty).toContainText(expectedCount.toString());
   }
 
-  async verifyCartSumIsCorrect() {
-    const cartItems = await this.cartSubtotals.all();
+  async getCartItemTitles(): Promise<string[]> {
+    const rawTitles = await this.cartItemTitles.allTextContents();
+    return rawTitles.map((title) => title.trim()).filter(Boolean);
+  }
 
+  async verifyTwoDistinctItems(): Promise<void> {
+    const titles = await this.getCartItemTitles();
+    expect(titles).toHaveLength(2);
+    expect(new Set(titles).size).toBe(2);
+  }
+
+  async verifyTitleRemoved(title: string): Promise<void> {
+    const titles = await this.getCartItemTitles();
+    expect(titles).not.toContain(title);
+  }
+
+  async verifyCartSumIsCorrect(): Promise<number> {
+    const cartItems = await this.cartSubtotals.all();
     let cartItemsSum = 0;
 
     for (const item of cartItems) {
@@ -31,13 +48,15 @@ export class CartPage extends BasePage {
     }
 
     const basketSumTotalText = await this.cartTotal.textContent();
-    const basketSumTotal = Number((basketSumTotalText || '').replace(/[^0-9.,]+/g, '').replace(',', '.')) || 0;
+    const basketSumTotal = Number(
+      (basketSumTotalText || '').replace(/[^0-9.,]+/g, '').replace(',', '.'),
+    ) || 0;
 
     expect(basketSumTotal).toBeCloseTo(cartItemsSum, 2);
     return cartItemsSum;
   }
 
-  async removeItemByIndex(index: number) {
+  async removeItemByIndex(index: number): Promise<void> {
     await this.removeButton.nth(index).click();
   }
 }
