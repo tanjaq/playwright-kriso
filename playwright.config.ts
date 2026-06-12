@@ -1,17 +1,4 @@
-/**
- * Part I — Flat tests (no POM)
- * Test suite: Add Books to Shopping Cart
- *
- * Rules:
- * - Use only: getByRole, getByText, getByPlaceholder, getByLabel
- * - No CSS class selectors, no XPath
- *
- * Tip: run `npx playwright codegen https://www.kriso.ee` to discover selectors.
- */
-import { expect, test } from '@playwright/test';
-import type { Locator, Page } from '@playwright/test';
-
-test.describe.configure({ mode: 'serial' });
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 let page: Page;
 let basketSumOfTwo = 0;
@@ -29,7 +16,7 @@ test.describe('Add Books to Shopping Cart', () => {
     await page.goto('https://www.kriso.ee/', { waitUntil: 'domcontentloaded' });
 
     const consentButton = page.getByRole('button', { name: /Nõustun|Accept|I agree/i });
-    if (await consentButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
+    if (await consentButton.isVisible().catch(() => false)) {
       await consentButton.click();
     }
   });
@@ -46,10 +33,12 @@ test.describe('Add Books to Shopping Cart', () => {
     const input = await resolveSearchInput();
     await input.click();
     await input.fill('harry potter');
+
     await page.getByRole('button', { name: /Search|Otsi/i }).first().click();
 
     const resultsText = await page.locator('.sb-results-total').first().textContent();
     const total = Number((resultsText || '').replace(/\D/g, '')) || 0;
+
     expect(total).toBeGreaterThan(1);
   });
 
@@ -60,6 +49,7 @@ test.describe('Add Books to Shopping Cart', () => {
     await expect(page.locator('.item-messagebox')).toContainText(
       /Toode lisati ostukorvi|added to (shopping )?cart/i,
     );
+
     await expect(page.locator('.cart-products')).toContainText('1');
     await page.locator('.cartbtn-event.back').click();
   });
@@ -71,6 +61,7 @@ test.describe('Add Books to Shopping Cart', () => {
     await expect(page.locator('.item-messagebox')).toContainText(
       /Toode lisati ostukorvi|added to (shopping )?cart/i,
     );
+
     await expect(page.locator('.cart-products')).toContainText('2');
   });
 
@@ -79,7 +70,7 @@ test.describe('Add Books to Shopping Cart', () => {
     await expect(page.locator('.order-qty > .o-value')).toContainText('2');
 
     const cartTitles = (await page.locator('.tbl-row .title a').allTextContents())
-      .map((title) => title.trim())
+      .map(t => t.trim())
       .filter(Boolean);
 
     expect(cartTitles).toHaveLength(2);
@@ -87,22 +78,25 @@ test.describe('Add Books to Shopping Cart', () => {
 
     basketSumOfTwo = await returnBasketSum();
     const basketSumTotal = await returnBasketSumTotal();
+
     expect(basketSumTotal).toBeCloseTo(basketSumOfTwo, 2);
   });
 
   test('Test remove item from cart and counter sum is correct', async () => {
-    const removedItemTitle = ((await page.locator('.tbl-row .title a').first().textContent()) || '').trim();
+    const removedItemTitle =
+      ((await page.locator('.tbl-row .title a').first().textContent()) || '').trim();
 
     await page.locator('.icon-remove').first().click();
     await expect(page.locator('.order-qty > .o-value')).toContainText('1');
 
     const basketSumOfOne = await returnBasketSum();
     const basketSumTotal = await returnBasketSumTotal();
+
     expect(basketSumTotal).toBeCloseTo(basketSumOfOne, 2);
     expect(basketSumOfOne).toBeLessThan(basketSumOfTwo);
 
     const remainingTitles = (await page.locator('.tbl-row .title a').allTextContents())
-      .map((title) => title.trim())
+      .map(t => t.trim())
       .filter(Boolean);
 
     expect(remainingTitles).toHaveLength(1);
@@ -114,7 +108,7 @@ test.describe('Add Books to Shopping Cart', () => {
       .getByRole('textbox', { name: /Pealkiri|Title|ISBN|märksõna|keyword/i })
       .first();
 
-    if (await namedSearchInput.isVisible({ timeout: 5_000 }).catch(() => false)) {
+    if (await namedSearchInput.isVisible().catch(() => false)) {
       return namedSearchInput;
     }
 
@@ -123,11 +117,14 @@ test.describe('Add Books to Shopping Cart', () => {
 
   async function returnBasketSum(): Promise<number> {
     let basketSum = 0;
+
     const cartItems = await page.locator('.tbl-row > .subtotal').all();
 
     for (const item of cartItems) {
       const text = await item.textContent();
-      const price = Number((text || '').replace(/[^0-9.,]+/g, '').replace(',', '.')) || 0;
+      const price =
+        Number((text || '').replace(/[^0-9.,]+/g, '').replace(',', '.')) || 0;
+
       basketSum += price;
     }
 
@@ -135,27 +132,21 @@ test.describe('Add Books to Shopping Cart', () => {
   }
 
   async function returnBasketSumTotal(): Promise<number> {
-    const basketSumTotalText = await page.locator('.order-total > .o-value').textContent();
-    return Number((basketSumTotalText || '').replace(/[^0-9.,]+/g, '').replace(',', '.')) || 0;
+    const text = await page.locator('.order-total > .o-value').textContent();
+    return Number((text || '').replace(/[^0-9.,]+/g, '').replace(',', '.')) || 0;
   }
 
   async function ensureAddToCartLinksAvailable(): Promise<void> {
     const addLinks = page.locator('a[data-func="add2cart"]');
 
-    if (await hasVisibleAddToCartLinks(addLinks)) {
-      return;
-    }
+    if (await hasVisibleAddToCartLinks(addLinks)) return;
 
     const input = await resolveSearchInput();
-    await input.click();
     await input.fill('harry potter');
     await page.getByRole('button', { name: /Search|Otsi/i }).first().click();
 
-    if (await hasVisibleAddToCartLinks(addLinks)) {
-      return;
-    }
+    if (await hasVisibleAddToCartLinks(addLinks)) return;
 
-    await input.click();
     await input.fill('tolkien');
     await page.getByRole('button', { name: /Search|Otsi/i }).first().click();
   }
@@ -163,8 +154,8 @@ test.describe('Add Books to Shopping Cart', () => {
   async function hasVisibleAddToCartLinks(addLinks: Locator): Promise<boolean> {
     const count = await addLinks.count();
 
-    for (let index = 0; index < count; index += 1) {
-      if (await addLinks.nth(index).isVisible().catch(() => false)) {
+    for (let i = 0; i < count; i++) {
+      if (await addLinks.nth(i).isVisible().catch(() => false)) {
         return true;
       }
     }
@@ -175,32 +166,18 @@ test.describe('Add Books to Shopping Cart', () => {
   async function clickVisibleAddToCartByIndex(index: number): Promise<void> {
     const addLinks = page.locator('a[data-func="add2cart"]');
     const count = await addLinks.count();
-    const visibleIndexes: number[] = [];
-
-    for (let current = 0; current < count; current += 1) {
-      if (await addLinks.nth(current).isVisible().catch(() => false)) {
-        visibleIndexes.push(current);
-      }
-    }
-
-    if (visibleIndexes.length > 0) {
-      const safeVisibleIndex = Math.min(index, visibleIndexes.length - 1);
-      await addLinks.nth(visibleIndexes[safeVisibleIndex]).click();
-      return;
-    }
 
     if (count > 0) {
       const safeIndex = Math.min(index, count - 1);
-      await addLinks.nth(safeIndex).evaluate((element) => {
-        (element as HTMLElement).click();
-      });
+      await addLinks.nth(safeIndex).click();
       return;
     }
 
-    const fallbackUrl = fallbackProducts[Math.min(index, fallbackProducts.length - 1)];
+    const fallbackUrl =
+      fallbackProducts[Math.min(index, fallbackProducts.length - 1)];
+
     await page.goto(fallbackUrl, { waitUntil: 'domcontentloaded' });
-    const fallbackAddButton = page.locator('a[data-func="add2cart"]').first();
-    await expect(fallbackAddButton).toBeVisible();
-    await fallbackAddButton.click();
+
+    await page.locator('a[data-func="add2cart"]').first().click();
   }
 });
