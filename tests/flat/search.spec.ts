@@ -1,61 +1,28 @@
-/**
- * Part I — Flat tests (no POM)
- * Test suite: Search for Books by Keywords
- *
- * Rules:
- *   - Use only: getByRole, getByText, getByPlaceholder, getByLabel
- *   - No CSS class selectors, no XPath
- *
- * Tip: run `npx playwright codegen https://www.kriso.ee` to discover selectors.
- */
 import { test, expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
-
-test.describe.configure({ mode: 'serial' });
-
-let page: Page;
 
 test.describe('Search for Books by Keywords', () => {
-
-    test.beforeAll(async ({ browser }) => {
-      const context = await browser.newContext();
-      page = await context.newPage();
-  
-      await page.goto('https://www.kriso.ee/');
-      await page.getByRole('button', { name: 'Nõustun' }).click();
+  test('search by missing keyword, author and ISBN', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Nõustun', exact: true }).click();
+    await expect(page).toHaveTitle(/Kriso|Krisostomus/i);
+    const search = page.getByPlaceholder('Pealkiri, autor, ISBN, märksõna');
+    await search.fill('xqzwmfkj');
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await expect(page.getByText('Teie poolt sisestatud märksõnale vastavat raamatut ei leitud. Palun proovige uuesti!')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Lisa ostukorvi', exact: true })).toHaveCount(0);
+    await search.fill('tolkien');
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await expect(page.getByText(/^Otsingu vasteid leitud:/)).toBeVisible();
+    const descriptions = page.getByRole('list').filter({
+      has: page.getByRole('heading', { level: 3, name: /^\d+\./ })
     });
-  
-    test.afterAll(async () => {
-      await page.context().close();
-    });
-
-    test('Test logo is visible', async () => {
-      const logo = page.locator('.logo-icon');
-      await expect(logo).toBeVisible();
-    }); 
-
-  test('Test no products found', async () => {
-    await page.locator('#top-search-text').click();
-    await page.locator('#top-search-text').fill('jaslkfjalskjdkls');
-    await page.locator('#top-search-btn-wrap').click();
-
-    await expect(page.locator('.msg.msg-info')).toContainText('Teie poolt sisestatud märksõnale vastavat raamatut ei leitud. Palun proovige uuesti!');
+    expect(await descriptions.count()).toBeGreaterThan(1);
+    for (const description of await descriptions.all()) {
+      await expect(description).toContainText(/tolkien/i);
+    }
+    await search.fill('9780307588371');
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await expect(page.getByRole('heading', { name: /Gone Girl/i }).first()).toBeVisible();
+    await expect(page.getByText(/ISBN-13:.*9780307588371/).first()).toBeVisible();
   });
-
-    test('Test search results contain keyword', async () => {
-    await page.locator('#top-search-text').click();
-    await page.locator('#top-search-text').fill('tolkien');
-    await page.locator('#top-search-btn-wrap').click();
-
-    //TODO check results contain keyword
-  });
-
-    test('Test search by ISBN', async () => {
-    await page.locator('#top-search-text').click();
-    await page.locator('#top-search-text').fill('9780307588371');
-    await page.locator('#top-search-btn-wrap').click();
-
-    //TODO check correct book is shown
-  });
-
 });

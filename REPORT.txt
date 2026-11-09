@@ -1,0 +1,10 @@
+Svyatoslav Vyazovyy — Kriso Playwright tasks 1, 2 and 3
+
+Implemented search, shopping-cart and filter journeys both as flat tests and Page Objects. Flat tests use semantic Playwright locators. POM tests reuse page methods and serial setup/cleanup. CI installs dependencies and both browsers, runs all tests, and uploads reports/traces.
+
+CI: https://github.com/Svyatoslavvyas/playwright-kriso/actions/runs/42664865537
+Result: 4 example tests passed, 12 Kriso tests failed before reaching the shop. The screenshot and error-context.md show HTTP 403: Access restricted / Ligipääs on piiratud. Kriso explicitly restricts the GitHub runner network. No tests were skipped or replaced with mocks to make this green.
+
+The store is accessible in the local browser. Cart and filter journeys were checked manually there. A passing automated run remains required before this assignment can be considered complete. Re-run on an allowed school/developer network or when Kriso lifts its restriction.
+
+Run: npm ci; npx playwright install; npx playwright test.

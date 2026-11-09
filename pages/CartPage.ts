@@ -1,43 +1,39 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class CartPage extends BasePage {
-  private readonly cartQty: Locator;
-  private readonly cartSubtotals: Locator;
-  private readonly cartTotal: Locator;
-  private readonly removeButton: Locator;
-
-  constructor(page: Page) {
-    super(page);
-    this.cartQty = this.page.locator('.order-qty > .o-value');
-    this.cartSubtotals = this.page.locator('.tbl-row > .subtotal');
-    this.cartTotal = this.page.locator('.order-total > .o-value');
-    this.removeButton = this.page.locator('.icon-remove');
+  private rows() {
+    return this.page.getByRole('row').filter({ has: this.page.getByRole('link') });
   }
 
-  async verifyCartCount(expectedCount: number) {
-    await expect(this.cartQty).toContainText(expectedCount.toString());
+  async verifyBooks(titles: string[]) {
+    await expect(this.rows()).toHaveCount(titles.length);
+    for (const title of titles) {
+      await expect(this.rows().getByRole('link', { name: title, exact: true })).toBeVisible();
+    }
   }
 
   async verifyCartSumIsCorrect() {
-    const cartItems = await this.cartSubtotals.all();
-
-    let cartItemsSum = 0;
-
-    for (const item of cartItems) {
-      const text = await item.textContent();
-      const price = Number((text || '').replace(/[^0-9.,]+/g, '').replace(',', '.')) || 0;
-      cartItemsSum += price;
+    let sum = 0;
+    for (const row of await this.rows().all()) {
+      const subtotal = await row.getByRole('cell').nth(4).innerText();
+      sum += Number(subtotal.replace(/[^0-9,]/g, '').replace(',', '.'));
     }
-
-    const basketSumTotalText = await this.cartTotal.textContent();
-    const basketSumTotal = Number((basketSumTotalText || '').replace(/[^0-9.,]+/g, '').replace(',', '.')) || 0;
-
-    expect(basketSumTotal).toBeCloseTo(cartItemsSum, 2);
-    return cartItemsSum;
+    const summary = await this.page.getByRole('list').filter({ hasText: 'Tooteid kokku:' }).first().innerText();
+    const match = summary.match(/Kokku:\s*([\d\s,.]+)\s*€/);
+    if (!match) throw new Error('Cart total was not found');
+    const total = Number(match[1].replace(/\s/g, '').replace(',', '.'));
+    expect(Number.isFinite(total)).toBe(true);
+    expect(total).toBeGreaterThan(0);
+    expect(total).toBeCloseTo(sum, 2);
+    return total;
   }
 
   async removeItemByIndex(index: number) {
-    await this.removeButton.nth(index).click();
+    await this.rows().nth(index).getByRole('cell').last().getByRole('link').click();
+  }
+
+  async verifyBookRemoved(title: string) {
+    await expect(this.rows().getByRole('link', { name: title, exact: true })).toHaveCount(0);
   }
 }

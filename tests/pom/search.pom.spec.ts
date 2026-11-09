@@ -1,54 +1,30 @@
-/**
- * Part II — Page Object Model tests
- * Test suite: Search for Books by Keywords
- *
- * Rules:
- *   - No raw selectors in test files — all locators live in page classes
- *   - Use only: getByRole, getByText, getByPlaceholder, getByLabel
- */
-import { test, expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import { HomePage } from '../../pages/HomePage';
+import { ProductPage } from '../../pages/ProductPage';
 
+test.describe.configure({ mode: 'serial' });
 let page: Page;
-let homePage: HomePage;
+let home: HomePage;
+
+test.beforeAll(async ({ browser }) => {
+  page = await browser.newPage();
+  home = new HomePage(page);
+  await home.openUrl();
+});
+
+test.afterAll(async () => {
+  await page.context().close();
+});
 
 test.describe('Search for Books by Keywords (POM)', () => {
-
-  test.beforeAll(async ({ browser }) => {
-      const context = await browser.newContext();
-      page = await context.newPage();
-  
-      homePage = new HomePage(page);
-  
-      await homePage.openUrl();
-      await homePage.acceptCookies();
-    });
-  
-    test.afterAll(async () => {
-      await page.context().close();
-    });
-  
-    test('Test logo is visible', async () => {
-      await homePage.verifyLogo();
-    }); 
-
-    test('Test no products found', async () => {
-      await homePage.searchByKeyword('jaslkfjalskjdkls');
-      await homePage.verifyNoProductsFoundMessage();
-    });
-
-    test('Test search results contain keyword', async () => {
-    await homePage.searchByKeyword('tolkien');
-    await homePage.verifyResultsCountMoreThan(1)
-
-    //TODO check results contain keyword
+  test('search by missing keyword, author and ISBN', async () => {
+    await home.verifyLogo();
+    await home.searchByKeyword('xqzwmfkj');
+    await home.verifyNoProductsFoundMessage();
+    await home.searchByKeyword('tolkien');
+    await home.verifySearchResults('tolkien');
+    await home.searchByKeyword('9780307588371');
+    const product = new ProductPage(page);
+    await product.verifyBook('Gone Girl', '9780307588371');
   });
-
-    test('Test search by ISBN', async () => {
-    await homePage.searchByKeyword('9780307588371');
-
-    //TODO check correct book is shown
-  });
-
 });
